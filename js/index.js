@@ -1,17 +1,19 @@
 var logined = true;
+var theme = "dark";
 if (window.Telegram && window.Telegram.WebApp) {
     const tg = window.Telegram.WebApp;
     
     // Инициализируем приложение
     tg.ready();
     tg.expand();
+    theme = tg.colorScheme;
 
 if (logined) {
   gmenu();
 }
 
 function gmenu() {
-  if (tg.colorScheme == "dark") {
+  if (theme == "dark") {
     var body = document.body;
     body.style.backgroundColor = "#1C1C1C";
     console.log("Темная тема активирована");
