@@ -1,85 +1,59 @@
 var logined = true; // временно true для теста
 var theme = "dark";
+var tg = null;
 
 // Инициализация Telegram WebApp
 function initTelegram() {
   if (window.Telegram && window.Telegram.WebApp) {
     try {
-      const tg = window.Telegram.WebApp;
-      
+      tg = window.Telegram.WebApp;
+
+      console.log('Telegram WebApp инициализирован');
+
       // Инициализируем приложение
       tg.ready();
       tg.expand();
-      
+
       // Получаем тему
       theme = tg.colorScheme || "dark";
-      
+      console.log('Тема Telegram:', theme);
+
       // Получаем информацию о пользователе
       const user = tg.initDataUnsafe?.user;
       if (user) {
         logined = true;
         console.log('Пользователь Telegram:', user.first_name);
       }
-      
+
       // Обработчик изменения темы
       tg.onEvent('themeChanged', function() {
         theme = tg.colorScheme;
         console.log('Тема изменена на:', theme);
         renderApp();
       });
-      
-      // Обработчик закрытия
-      tg.onEvent('viewportChanged', function() {
-        if (tg.isExpanded) {
-          tg.expand();
-        }
-      });
-      
+
       return true;
     } catch (error) {
       console.error('Ошибка инициализации Telegram WebApp:', error);
       return false;
     }
+  } else {
+    console.log('Telegram WebApp не обнаружен, работаем в браузере');
+    return false;
   }
-  return false;
 }
 
-// Функция для рендеринга меню
-function GMenu() {
-  const styles = theme === "dark" ? {
-    bodyBg: "#1C1C1C",
-    textColor: "#e7e7e7",
-    secondaryText: "#888",
-    bgColor: "rgba(255,255,255,0.05)",
-    borderColor: "rgba(255,255,255,0.1)",
-    inputBg: "rgba(255,255,255,0.1)",
-    inputBorder: "rgba(255,255,255,0.2)",
-    placeholder: "rgba(255,255,255,0.5)",
-    logo: "/img/LogoZOREX_dark.png",
-    shadow: "0 5px 15px rgba(0,0,0,0.3)"
-  } : {
-    bodyBg: "#f8f5f5",
-    textColor: "#333333",
-    secondaryText: "#666666",
-    bgColor: "rgba(0,0,0,0.03)",
-    borderColor: "rgba(0,0,0,0.1)",
-    inputBg: "rgba(0,0,0,0.05)",
-    inputBorder: "rgba(0,0,0,0.2)",
-    placeholder: "rgba(0,0,0,0.4)",
-    logo: "/img/LogoZOREX_light.png",
-    shadow: "0 5px 15px rgba(0,0,0,0.1)"
-  };
-
-  // Динамически добавляем стили
+// Функция для добавления стилей
+function addStyles(styles) {
   const styleId = 'theme-styles';
   let styleElement = document.getElementById(styleId);
-  
+
   if (!styleElement) {
     styleElement = document.createElement('style');
     styleElement.id = styleId;
     document.head.appendChild(styleElement);
   }
-  
+
   styleElement.textContent = `
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -90,7 +64,7 @@ function GMenu() {
       transition: background-color 0.3s ease;
     }
 
-    #gmenu {
+    #app {
       max-width: 500px;
       margin: 0 auto;
     }
@@ -183,93 +157,161 @@ function GMenu() {
       }
     }
   `;
+}
 
-  // Обработчик отправки формы
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const nickname = document.getElementById('nickname')?.value;
-    if (nickname && nickname.length >= 5 && nickname.length <= 24) {
-      alert('Никнейм принят: ' + nickname);
-      // Здесь можно добавить логику авторизации
-    } else {
-      alert('Введите никнейм от 5 до 24 символов');
-    }
+// Функция для рендеринга главного меню
+function renderGMenu() {
+  const styles = theme === "dark" ? {
+    bodyBg: "#1C1C1C",
+    textColor: "#e7e7e7",
+    secondaryText: "#888",
+    bgColor: "rgba(255,255,255,0.05)",
+    borderColor: "rgba(255,255,255,0.1)",
+    inputBg: "rgba(255,255,255,0.1)",
+    inputBorder: "rgba(255,255,255,0.2)",
+    placeholder: "rgba(255,255,255,0.5)",
+    logo: "/img/LogoZOREX_dark.png",
+    shadow: "0 5px 15px rgba(0,0,0,0.3)"
+  } : {
+    bodyBg: "#f8f5f5",
+    textColor: "#333333",
+    secondaryText: "#666666",
+    bgColor: "rgba(0,0,0,0.03)",
+    borderColor: "rgba(0,0,0,0.1)",
+    inputBg: "rgba(0,0,0,0.05)",
+    inputBorder: "rgba(0,0,0,0.2)",
+    placeholder: "rgba(0,0,0,0.4)",
+    logo: "/img/LogoZOREX_light.png",
+    shadow: "0 5px 15px rgba(0,0,0,0.1)"
   };
 
-  return (
+  // Добавляем стили
+  addStyles(styles);
+
+  // Создаем HTML
+  const html = `
     <div>
-      <h1 className="zorex-title">ZOREX</h1>
-      <p className="zorex-subtitle">Онлайн сервис для сервера MultiPunk</p>
+      <h1 class="zorex-title">ZOREX</h1>
+      <p class="zorex-subtitle">Онлайн сервис для сервера MultiPunk</p>
 
-      <img src={styles.logo} alt="ZOREX" className="zorex-logo" />
+      <img src="${styles.logo}" alt="ZOREX" class="zorex-logo">
 
-      <form className="zorex-form" onSubmit={handleSubmit}>
-        <label className="zorex-label" htmlFor="nickname">
+      <form class="zorex-form" id="loginForm">
+        <label class="zorex-label" for="nickname">
           Введите ваш ник на MultiPunk:
         </label>
-        <input 
+        <input
           id="nickname"
-          type="text" 
-          placeholder="Steve" 
-          minLength="5" 
-          maxLength="24"
-          className="zorex-input"
+          type="text"
+          placeholder="Steve"
+          minlength="5"
+          maxlength="24"
+          class="zorex-input"
           required
         />
-        <button type="submit" className="zorex-submit">
+        <button type="submit" class="zorex-submit">
           Войти
         </button>
       </form>
     </div>
-  );
+  `;
+
+  // Вставляем HTML
+  const app = document.getElementById('app');
+  app.innerHTML = html;
+
+  // Добавляем обработчик формы
+  const form = document.getElementById('loginForm');
+  if (form) {
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const nickname = document.getElementById('nickname')?.value;
+      if (nickname && nickname.length >= 5 && nickname.length <= 24) {
+        alert('Никнейм принят: ' + nickname);
+        // Здесь можно добавить логику авторизации
+      } else {
+        alert('Введите никнейм от 5 до 24 символов');
+      }
+    });
+  }
 }
 
-// Функция для логина
-function LoginMenu() {
-  return (
-    <div style={{
-      textAlign: 'center',
-      padding: '50px 20px',
-      color: theme === 'dark' ? '#e7e7e7' : '#333'
-    }}>
+// Функция для рендеринга логина
+function renderLoginMenu() {
+  const color = theme === 'dark' ? '#e7e7e7' : '#333';
+  const bgColor = theme === 'dark' ? '#1C1C1C' : '#f8f5f5';
+
+  document.body.style.backgroundColor = bgColor;
+
+  const html = `
+    <div style="text-align: center; padding: 50px 20px; color: ${color}">
       <h2>Для продолжения войдите в систему</h2>
       <p>Используйте ваш Telegram аккаунт</p>
+      <button onclick="loginWithTelegram()" style="
+        padding: 12px 24px;
+        background: linear-gradient(135deg, #8774e1, #6a5acd);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        cursor: pointer;
+        margin-top: 20px;
+      ">
+        Войти через Telegram
+      </button>
     </div>
-  );
+  `;
+
+  const app = document.getElementById('app');
+  app.innerHTML = html;
 }
 
 // Основная функция рендеринга
 function renderApp() {
-  const container = document.getElementById('gmenu');
-  const loginContainer = document.getElementById('loginmenu');
-  
-  // Очищаем контейнеры
-  container.innerHTML = '';
-  loginContainer.innerHTML = '';
-  
-  // Применяем фоновый цвет
-  document.body.style.backgroundColor = theme === "dark" ? "#1C1C1C" : "#f8f5f5";
-  
+  console.log('renderApp вызван, logined =', logined, 'theme =', theme);
+
   if (logined) {
-    // Рендерим главное меню
-    ReactDOM.render(<GMenu />, container);
+    renderGMenu();
   } else {
-    // Рендерим меню логина
-    ReactDOM.render(<LoginMenu />, loginContainer);
+    renderLoginMenu();
   }
 }
 
+// Функция для входа через Telegram
+window.loginWithTelegram = function() {
+  if (tg) {
+    // Если в Telegram WebApp, логинимся автоматически
+    logined = true;
+    renderApp();
+  } else {
+    // Если в браузере, симулируем вход
+    alert('Войдите в Telegram и откройте это приложение через бота');
+    logined = true;
+    renderApp();
+  }
+};
+
 // Инициализация при загрузке
 document.addEventListener('DOMContentLoaded', function() {
+  console.log('DOM загружен');
+
   // Инициализируем Telegram
-  initTelegram();
-  
+  const isTelegram = initTelegram();
+
+  console.log('Telegram инициализирован:', isTelegram);
+
+  // Если не в Telegram, можно добавить тестовые данные
+  if (!isTelegram) {
+    console.log('Работаем в браузере, используем тестовый режим');
+    // Для тестирования можно автоматически логинить
+    // logined = true; // раскомментируйте для автоматического входа
+  }
+
   // Рендерим приложение
   renderApp();
-  
-  // Добавляем обработчик для демонстрации смены темы (для тестирования)
-  window.testToggleTheme = function() {
-    theme = theme === "dark" ? "light" : "dark";
-    renderApp();
-  };
+
+  // Для отладки: выводим информацию в консоль
+  console.log('Приложение запущено');
+  console.log('Тема:', theme);
+  console.log('Вход выполнен:', logined);
 });
