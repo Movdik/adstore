@@ -1,6 +1,10 @@
 var logined = true;
-const tg = window.telegram.WebApp;
-tg.expand();
+if (window.Telegram && window.Telegram.WebApp) {
+    const tg = window.Telegram.WebApp;
+    
+    // Инициализируем приложение
+    tg.ready();
+    tg.expand();
 
 if (logined) {
   gmenu();
